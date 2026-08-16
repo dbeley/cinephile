@@ -416,7 +416,7 @@
     <label>API Key</label>
     <input id="cfgKey" type="password" placeholder="sk-...">
     <label>Model</label>
-    <input id="cfgModel" placeholder="deepseek-chat">
+    <input id="cfgModel" placeholder="deepseek-v4-flash">
     <div class="btn-row">
       <button onclick="closeModal('settingsModal')">Cancel</button>
       <button class="primary" onclick="saveSettings()">Save</button>
@@ -501,7 +501,7 @@
 const STORAGE_KEY = 'cinephile_data';
 
 function defaultState() {
-  return { movies: [], seed: '', settings: { provider: 'deepseek', endpoint: '', key: '', model: 'deepseek-chat' } };
+  return { movies: [], seed: '', settings: { provider: 'deepseek', endpoint: '', key: '', model: 'deepseek-v4-flash' } };
 }
 
 function loadState() {
@@ -916,7 +916,7 @@ function importData() {
 // ── Provider preset helper ──
 document.getElementById('cfgProvider').addEventListener('change', (e) => {
   const presets = {
-    deepseek: { endpoint: 'https://api.deepseek.com/chat/completions', model: 'deepseek-chat' },
+    deepseek: { endpoint: 'https://api.deepseek.com/chat/completions', model: 'deepseek-v4-flash' },
     openai: { endpoint: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o' },
     openrouter: { endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'google/gemini-2.0-flash-001' },
     anthropic: { endpoint: 'https://api.anthropic.com/v1/messages', model: 'claude-sonnet-4-20250514' },
