@@ -404,24 +404,19 @@
     <h2>Settings</h2>
     <label>LLM Provider</label>
     <select id="cfgProvider">
-      <option value="openrouter">OpenRouter (recommended — works from browser)</option>
-      <option value="openai">OpenAI (may need CORS proxy)</option>
-      <option value="anthropic">Anthropic (may need CORS proxy)</option>
-      <option value="ollama">Ollama (local — no API key needed)</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="openai">OpenAI</option>
+      <option value="anthropic">Anthropic (Claude)</option>
+      <option value="openrouter">OpenRouter</option>
+      <option value="ollama">Ollama (local)</option>
       <option value="custom">Custom OpenAI-compatible</option>
     </select>
     <label>API Endpoint</label>
-    <input id="cfgEndpoint" placeholder="https://openrouter.ai/api/v1/chat/completions">
+    <input id="cfgEndpoint" placeholder="https://api.deepseek.com/chat/completions">
     <label>API Key</label>
-    <input id="cfgKey" type="password" placeholder="sk-or-...">
+    <input id="cfgKey" type="password" placeholder="sk-...">
     <label>Model</label>
-    <input id="cfgModel" placeholder="google/gemini-2.0-flash-001">
-    <p style="font-size:0.75rem; color:var(--muted); margin-top:0.75rem; line-height:1.4;">
-      <strong>OpenRouter</strong> works directly from the browser — get a free key at
-      <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--accent);">openrouter.ai/keys</a>.
-      Many models are free or very cheap.
-      OpenAI/Anthropic block browser requests (CORS), so use OpenRouter or Ollama.
-    </p>
+    <input id="cfgModel" placeholder="deepseek-chat">
     <div class="btn-row">
       <button onclick="closeModal('settingsModal')">Cancel</button>
       <button class="primary" onclick="saveSettings()">Save</button>
@@ -506,7 +501,7 @@
 const STORAGE_KEY = 'cinephile_data';
 
 function defaultState() {
-  return { movies: [], seed: '', settings: { provider: 'openrouter', endpoint: '', key: '', model: 'google/gemini-2.0-flash-001' } };
+  return { movies: [], seed: '', settings: { provider: 'deepseek', endpoint: '', key: '', model: 'deepseek-chat' } };
 }
 
 function loadState() {
@@ -775,8 +770,9 @@ async function doFetch() {
   const s = state.settings;
   let url = s.endpoint;
   if (!url) {
-    if (s.provider === 'openrouter') url = s.endpoint || 'https://openrouter.ai/api/v1/chat/completions';
+    if (s.provider === 'deepseek') url = s.endpoint || 'https://api.deepseek.com/chat/completions';
     else if (s.provider === 'openai') url = s.endpoint || 'https://api.openai.com/v1/chat/completions';
+    else if (s.provider === 'openrouter') url = s.endpoint || 'https://openrouter.ai/api/v1/chat/completions';
     else if (s.provider === 'anthropic') url = s.endpoint || 'https://api.anthropic.com/v1/messages';
     else if (s.provider === 'ollama') url = s.endpoint || 'http://localhost:11434/api/chat';
     else { status.className = 'status error'; status.textContent = 'No endpoint configured.'; btn.disabled = false; return; }
@@ -920,8 +916,9 @@ function importData() {
 // ── Provider preset helper ──
 document.getElementById('cfgProvider').addEventListener('change', (e) => {
   const presets = {
-    openrouter: { endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'google/gemini-2.0-flash-001' },
+    deepseek: { endpoint: 'https://api.deepseek.com/chat/completions', model: 'deepseek-chat' },
     openai: { endpoint: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o' },
+    openrouter: { endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'google/gemini-2.0-flash-001' },
     anthropic: { endpoint: 'https://api.anthropic.com/v1/messages', model: 'claude-sonnet-4-20250514' },
     ollama: { endpoint: 'http://localhost:11434/api/chat', model: 'llama3' },
     custom: { endpoint: '', model: '' },
