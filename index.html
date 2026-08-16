@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinephile — Movie Recommendations</title>
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #18181b;
+    --surface-2: #1e1e22;
+    --border: #27272a;
+    --ink: #e4e4e7;
+    --muted: #71717a;
+    --accent: #f59e0b;
+    --accent-dim: #92400e;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --radius: 8px;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 2rem 2rem 1rem;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    letter-spacing: -0.02em;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+
+  /* ── Controls bar ── */
+  .controls {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .controls button, .controls select {
+    font-family: var(--font);
+    font-size: 0.8125rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .controls button:hover { border-color: var(--accent); }
+  .controls button.primary {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .controls button.primary:hover { background: #fbbf24; }
+  .controls button.danger { border-color: var(--danger); color: var(--danger); }
+  .controls button.danger:hover { background: var(--danger); color: #fff; }
+  .controls .spacer { flex: 1; }
+
+  /* ── Filter chips ── */
+  .filters {
+    max-width: 960px;
+    margin: 1rem auto 0;
+    padding: 0 2rem;
+    display: flex;
+    gap: 0.375rem;
+    flex-wrap: wrap;
+  }
+  .chip {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.15s;
+  }
+  .chip.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(245,158,11,0.08);
+  }
+
+  /* ── Movie list ── */
+  .movie-list {
+    max-width: 960px;
+    margin: 1.5rem auto;
+    padding: 0 2rem 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .tier-header {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    padding: 1rem 0 0.375rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .movie-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: border-color 0.15s, opacity 0.3s;
+    align-items: start;
+  }
+  .movie-card:hover { border-color: #3f3f46; }
+  .movie-card.watched {
+    opacity: 0.45;
+  }
+  .movie-card.watched .movie-title {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .movie-info { min-width: 0; }
+  .movie-title {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .movie-title .year {
+    font-weight: 400;
+    color: var(--muted);
+    font-size: 0.8125rem;
+  }
+  .movie-meta {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .movie-meta span { white-space: nowrap; }
+  .movie-desc {
+    font-size: 0.8125rem;
+    color: #a1a1aa;
+    margin-top: 0.375rem;
+    line-height: 1.45;
+  }
+  .movie-tags {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    margin-top: 0.375rem;
+  }
+  .movie-tag {
+    font-size: 0.6875rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .movie-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    align-items: flex-end;
+    padding-top: 0.125rem;
+  }
+  .movie-actions button {
+    font-family: var(--font);
+    font-size: 0.6875rem;
+    padding: 0.3rem 0.625rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .movie-actions button:hover { border-color: var(--accent); color: var(--ink); }
+  .movie-actions button.watched-btn.on {
+    border-color: var(--success);
+    color: var(--success);
+    background: rgba(34,197,94,0.08);
+  }
+  .movie-actions button.delete-btn:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  /* ── Empty state ── */
+  .empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+  }
+  .empty h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+  }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+  .modal h2 {
+    font-size: 1.125rem;
+    margin-bottom: 1rem;
+  }
+  .modal label {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+    margin-top: 0.875rem;
+  }
+  .modal input, .modal textarea, .modal select {
+    width: 100%;
+    font-family: var(--font);
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .modal input:focus, .modal textarea:focus, .modal select:focus {
+    border-color: var(--accent);
+  }
+  .modal textarea { resize: vertical; min-height: 120px; }
+  .modal .btn-row {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+  }
+  .modal .btn-row button {
+    font-family: var(--font);
+    font-size: 0.8125rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .modal .btn-row button.primary {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .modal .btn-row button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .modal .status {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    margin-top: 0.75rem;
+    min-height: 1.2em;
+  }
+  .modal .status.error { color: var(--danger); }
+  .modal .status.ok { color: var(--success); }
+
+  /* ── Loading spinner ── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 0.375rem;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+    color: var(--ink);
+    z-index: 200;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    header { padding: 1.5rem 1rem 0.75rem; }
+    header h1 { font-size: 1.5rem; }
+    .controls, .filters, .movie-list { padding-left: 1rem; padding-right: 1rem; }
+    .movie-card { grid-template-columns: 1fr; }
+    .movie-actions { flex-direction: row; padding-top: 0.5rem; }
+  }
+
+  /* ── Prompt preview ── */
+  .prompt-preview {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    color: var(--muted);
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Cinephile</h1>
+  <p>Curated movie recommendations — powered by your taste &amp; an LLM.</p>
+</header>
+
+<div class="controls">
+  <button class="primary" onclick="openFetchModal()">＋ Get Recommendations</button>
+  <button onclick="openSeedModal()">✏️ Edit Seed</button>
+  <button onclick="openSettingsModal()">⚙️ Settings</button>
+  <span class="spacer"></span>
+  <span id="movieCount" style="font-size:0.75rem; color:var(--muted);"></span>
+</div>
+
+<div class="filters" id="filterBar"></div>
+
+<div class="movie-list" id="movieList"></div>
+
+<!-- ── Settings Modal ── -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h2>Settings</h2>
+    <label>LLM Provider</label>
+    <select id="cfgProvider">
+      <option value="openai">OpenAI (chatgpt.com or API)</option>
+      <option value="anthropic">Anthropic (Claude)</option>
+      <option value="ollama">Ollama (local)</option>
+      <option value="custom">Custom OpenAI-compatible</option>
+    </select>
+    <label>API Endpoint</label>
+    <input id="cfgEndpoint" placeholder="https://api.openai.com/v1/chat/completions">
+    <label>API Key</label>
+    <input id="cfgKey" type="password" placeholder="sk-...">
+    <label>Model</label>
+    <input id="cfgModel" placeholder="gpt-4o">
+    <div class="btn-row">
+      <button onclick="closeModal('settingsModal')">Cancel</button>
+      <button class="primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Seed Modal ── -->
+<div class="modal-overlay" id="seedModal">
+  <div class="modal">
+    <h2>Your Taste Profile</h2>
+    <p style="font-size:0.8125rem; color:var(--muted); margin-bottom:0.5rem;">
+      Paste a watchlist, list of favorite films, or describe what you like. This is the "seed" the LLM uses to understand your taste.
+    </p>
+    <textarea id="seedText" rows="10" placeholder="e.g. The Third Man, Witness for the Prosecution, 12 Angry Men, Le Trou, Bresson films, film noir, French New Wave..."></textarea>
+    <div class="btn-row">
+      <button onclick="closeModal('seedModal')">Cancel</button>
+      <button class="primary" onclick="saveSeed()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Fetch Modal ── -->
+<div class="modal-overlay" id="fetchModal">
+  <div class="modal">
+    <h2>Get Recommendations</h2>
+    <p style="font-size:0.8125rem; color:var(--muted); margin-bottom:0.5rem;">
+      The LLM will suggest movies based on your seed + movies you've already watched.
+    </p>
+    <label>Number of movies</label>
+    <input id="fetchCount" type="number" value="10" min="1" max="30">
+    <label>Focus (optional)</label>
+    <input id="fetchFocus" placeholder="e.g. more French noir, 1950s thrillers">
+    <label>System prompt preview</label>
+    <div class="prompt-preview" id="promptPreview"></div>
+    <div class="status" id="fetchStatus"></div>
+    <div class="btn-row">
+      <button onclick="closeModal('fetchModal')">Cancel</button>
+      <button class="primary" id="fetchBtn" onclick="doFetch()">Fetch</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add/Edit Modal ── -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h2 id="addModalTitle">Add Movie</h2>
+    <label>Title *</label>
+    <input id="addTitle">
+    <label>Year</label>
+    <input id="addYear" type="number" placeholder="1957">
+    <label>Director</label>
+    <input id="addDirector">
+    <label>Language</label>
+    <input id="addLanguage" placeholder="French">
+    <label>Rating (1-10)</label>
+    <input id="addRating" type="number" min="1" max="10" step="0.1">
+    <label>Genre</label>
+    <input id="addGenre" placeholder="Thriller, Drama">
+    <label>Movement</label>
+    <input id="addMovement" placeholder="Film Noir, Nouvelle Vague">
+    <label>Description</label>
+    <input id="addDesc" placeholder="Brief note on why it's recommended">
+    <label>Tier</label>
+    <select id="addTier">
+      <option value="1">Tier 1 — Start Here</option>
+      <option value="2">Tier 2 — Essential</option>
+      <option value="3">Tier 3 — Deep Cuts</option>
+      <option value="4">Tier 4 — Modern Torch</option>
+    </select>
+    <div class="btn-row">
+      <button onclick="closeModal('addModal')">Cancel</button>
+      <button class="primary" onclick="saveAddMovie()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──
+const STORAGE_KEY = 'cinephile_data';
+
+function defaultState() {
+  return { movies: [], seed: '', settings: { provider: 'openai', endpoint: '', key: '', model: 'gpt-4o' } };
+}
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultState(); }
+  catch { return defaultState(); }
+}
+
+function saveState(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let state = loadState();
+let activeFilter = null;
+let editingMovieId = null;
+
+// ── Render ──
+function render() {
+  const list = document.getElementById('movieList');
+  const count = document.getElementById('movieCount');
+  const movies = state.movies;
+
+  // filters
+  const allTags = new Set();
+  const allMovements = new Set();
+  movies.forEach(m => {
+    (m.genre || '').split(',').map(s => s.trim()).filter(Boolean).forEach(t => allTags.add(t));
+    (m.movement || '').split(',').map(s => s.trim()).filter(Boolean).forEach(t => allMovements.add(t));
+  });
+  const filterBar = document.getElementById('filterBar');
+  filterBar.innerHTML = '';
+  const items = [...allTags].sort();
+  if (allMovements.size) items.push('---', ...[...allMovements].sort());
+  items.forEach(t => {
+    if (t === '---') { const sep = document.createElement('span'); sep.style.cssText='width:1px;height:16px;background:var(--border);margin:0 0.25rem;'; filterBar.appendChild(sep); return; }
+    const chip = document.createElement('button');
+    chip.className = 'chip' + (activeFilter === t ? ' active' : '');
+    chip.textContent = t;
+    chip.onclick = () => { activeFilter = activeFilter === t ? null : t; render(); };
+    filterBar.appendChild(chip);
+  });
+
+  let filtered = movies;
+  if (activeFilter) {
+    filtered = movies.filter(m =>
+      (m.genre || '').toLowerCase().includes(activeFilter.toLowerCase()) ||
+      (m.movement || '').toLowerCase().includes(activeFilter.toLowerCase())
+    );
+  }
+
+  // sort: unwatched first, then by tier, then by rating desc
+  filtered.sort((a, b) => {
+    if (a.watched !== b.watched) return a.watched ? 1 : -1;
+    if (a.tier !== b.tier) return (a.tier || 99) - (b.tier || 99);
+    return (b.rating || 0) - (a.rating || 0);
+  });
+
+  count.textContent = `${movies.length} movie${movies.length !== 1 ? 's' : ''} · ${movies.filter(m => m.watched).length} watched`;
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty"><h2>No movies yet</h2><p>Click "Get Recommendations" to start, or add one manually.</p></div>`;
+    return;
+  }
+
+  let html = '';
+  let lastTier = null;
+  const tierNames = { 1: 'Tier 1 — Start Here 🔥', 2: 'Tier 2 — Essential 🎯', 3: 'Tier 3 — Deep Cuts 🕳️', 4: 'Tier 4 — Modern Torch 🔥' };
+
+  filtered.forEach(m => {
+    if (m.tier !== lastTier) {
+      lastTier = m.tier;
+      html += `<div class="tier-header">${tierNames[m.tier] || 'Tier ' + m.tier}</div>`;
+    }
+    html += `<div class="movie-card${m.watched ? ' watched' : ''}" data-id="${m.id}">
+      <div class="movie-info">
+        <div class="movie-title">
+          ${esc(m.title)}${m.year ? `<span class="year">(${m.year})</span>` : ''}
+        </div>
+        <div class="movie-meta">
+          ${m.director ? `<span>🎬 ${esc(m.director)}</span>` : ''}
+          ${m.language ? `<span>🗣 ${esc(m.language)}</span>` : ''}
+          ${m.rating ? `<span>⭐ ${m.rating}</span>` : ''}
+        </div>
+        ${m.desc ? `<div class="movie-desc">${esc(m.desc)}</div>` : ''}
+        <div class="movie-tags">
+          ${(m.genre||'').split(',').map(s=>s.trim()).filter(Boolean).map(g=>`<span class="movie-tag">${esc(g)}</span>`).join('')}
+          ${(m.movement||'').split(',').map(s=>s.trim()).filter(Boolean).map(g=>`<span class="movie-tag">${esc(g)}</span>`).join('')}
+        </div>
+      </div>
+      <div class="movie-actions">
+        <button class="watched-btn${m.watched ? ' on' : ''}" onclick="toggleWatched('${m.id}')">${m.watched ? '✓ Watched' : '○ Watch'}</button>
+        <button onclick="editMovie('${m.id}')">✎ Edit</button>
+        <button class="delete-btn" onclick="deleteMovie('${m.id}')">✕</button>
+      </div>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ── Movie CRUD ──
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function toggleWatched(id) {
+  const m = state.movies.find(x => x.id === id);
+  if (m) { m.watched = !m.watched; saveState(state); render(); }
+}
+
+function deleteMovie(id) {
+  state.movies = state.movies.filter(x => x.id !== id);
+  saveState(state);
+  render();
+  toast('Movie removed');
+}
+
+function editMovie(id) {
+  const m = state.movies.find(x => x.id === id);
+  if (!m) return;
+  editingMovieId = id;
+  document.getElementById('addModalTitle').textContent = 'Edit Movie';
+  document.getElementById('addTitle').value = m.title || '';
+  document.getElementById('addYear').value = m.year || '';
+  document.getElementById('addDirector').value = m.director || '';
+  document.getElementById('addLanguage').value = m.language || '';
+  document.getElementById('addRating').value = m.rating || '';
+  document.getElementById('addGenre').value = m.genre || '';
+  document.getElementById('addMovement').value = m.movement || '';
+  document.getElementById('addDesc').value = m.desc || '';
+  document.getElementById('addTier').value = m.tier || 1;
+  document.getElementById('addModal').classList.add('open');
+}
+
+function saveAddMovie() {
+  const title = document.getElementById('addTitle').value.trim();
+  if (!title) { toast('Title is required'); return; }
+  const data = {
+    title,
+    year: parseInt(document.getElementById('addYear').value) || null,
+    director: document.getElementById('addDirector').value.trim(),
+    language: document.getElementById('addLanguage').value.trim(),
+    rating: parseFloat(document.getElementById('addRating').value) || null,
+    genre: document.getElementById('addGenre').value.trim(),
+    movement: document.getElementById('addMovement').value.trim(),
+    desc: document.getElementById('addDesc').value.trim(),
+    tier: parseInt(document.getElementById('addTier').value) || 1,
+  };
+  if (editingMovieId) {
+    const m = state.movies.find(x => x.id === editingMovieId);
+    if (m) Object.assign(m, data);
+    editingMovieId = null;
+  } else {
+    state.movies.push({ id: genId(), watched: false, ...data });
+  }
+  saveState(state);
+  render();
+  closeModal('addModal');
+  toast(editingMovieId ? 'Movie updated' : 'Movie added');
+}
+
+// ── Settings ──
+function openSettingsModal() {
+  const s = state.settings;
+  document.getElementById('cfgProvider').value = s.provider || 'openai';
+  document.getElementById('cfgEndpoint').value = s.endpoint || '';
+  document.getElementById('cfgKey').value = s.key || '';
+  document.getElementById('cfgModel').value = s.model || 'gpt-4o';
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function saveSettings() {
+  state.settings = {
+    provider: document.getElementById('cfgProvider').value,
+    endpoint: document.getElementById('cfgEndpoint').value.trim(),
+    key: document.getElementById('cfgKey').value.trim(),
+    model: document.getElementById('cfgModel').value.trim(),
+  };
+  saveState(state);
+  closeModal('settingsModal');
+  toast('Settings saved');
+}
+
+// ── Seed ──
+function openSeedModal() {
+  document.getElementById('seedText').value = state.seed || '';
+  document.getElementById('seedModal').classList.add('open');
+}
+
+function saveSeed() {
+  state.seed = document.getElementById('seedText').value.trim();
+  saveState(state);
+  closeModal('seedModal');
+  toast('Seed updated');
+}
+
+// ── Fetch ──
+function openFetchModal() {
+  if (!state.settings.key && state.settings.provider !== 'ollama') {
+    openSettingsModal();
+    document.getElementById('fetchStatus').textContent = 'Please set your API key first.';
+    document.getElementById('fetchStatus').className = 'status error';
+    return;
+  }
+  document.getElementById('fetchStatus').textContent = '';
+  document.getElementById('fetchStatus').className = 'status';
+  document.getElementById('fetchBtn').disabled = false;
+  updatePromptPreview();
+  document.getElementById('fetchModal').classList.add('open');
+}
+
+function updatePromptPreview() {
+  const preview = document.getElementById('promptPreview');
+  const prompt = buildPrompt();
+  preview.textContent = prompt;
+}
+
+function buildPrompt() {
+  const watched = state.movies.filter(m => m.watched).map(m => `${m.title} (${m.year || '?'}) dir. ${m.director || '?'} — ${m.movement || ''}`);
+  const existing = state.movies.map(m => m.title);
+  const focus = document.getElementById('fetchFocus')?.value?.trim() || '';
+  const count = document.getElementById('fetchCount')?.value || 10;
+
+  let p = `You are a film expert and curator. Based on the user's taste profile, recommend exactly ${count} movies they haven't seen yet.
+
+TASTE PROFILE:
+${state.seed || '(no seed provided — infer from watched list)'}
+
+${watched.length ? `ALREADY WATCHED (do NOT repeat these):\n${watched.join('\n')}` : '(no movies watched yet)'}
+
+${existing.length ? `\nALREADY IN COLLECTION (do NOT recommend these):\n${existing.join(', ')}` : ''}
+
+${focus ? `\nSPECIAL FOCUS: ${focus}` : ''}
+
+RULES:
+- Recommend movies they likely haven't seen
+- Include a mix of tiers: some obvious picks, some deeper cuts
+- Each movie MUST include ALL fields
+- Return ONLY valid JSON array, no other text
+- Rate films honestly (not everything is a 9 or 10)
+
+OUTPUT FORMAT — return a JSON array:
+[
+  {
+    "title": "Movie Title",
+    "year": 1957,
+    "director": "Director Name",
+    "language": "English",
+    "rating": 8.5,
+    "genre": "Thriller, Drama",
+    "movement": "Film Noir",
+    "desc": "One or two sentences on why this matches their taste.",
+    "tier": 1
+  }
+]
+
+tier values: 1 = "Start Here" (strongest match), 2 = "Essential", 3 = "Deep Cuts", 4 = "Modern Torch"`;
+  return p;
+}
+
+async function doFetch() {
+  const btn = document.getElementById('fetchBtn');
+  const status = document.getElementById('fetchStatus');
+  btn.disabled = true;
+  status.className = 'status';
+  status.innerHTML = '<span class="spinner"></span> Asking the LLM…';
+
+  const s = state.settings;
+  let url = s.endpoint;
+  if (!url) {
+    if (s.provider === 'openai') url = 'https://api.openai.com/v1/chat/completions';
+    else if (s.provider === 'anthropic') url = 'https://api.anthropic.com/v1/messages';
+    else if (s.provider === 'ollama') url = 'http://localhost:11434/api/chat';
+    else { status.className = 'status error'; status.textContent = 'No endpoint configured.'; btn.disabled = false; return; }
+  }
+
+  const systemPrompt = buildPrompt();
+  let headers, body;
+
+  if (s.provider === 'anthropic') {
+    headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': s.key,
+      'anthropic-version': '2023-06-01',
+    };
+    body = JSON.stringify({
+      model: s.model || 'claude-sonnet-4-20250514',
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: 'Recommend movies now. Return only the JSON array.' }],
+    });
+  } else {
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${s.key}`,
+    };
+    body = JSON.stringify({
+      model: s.model || 'gpt-4o',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: 'Recommend movies now. Return only the JSON array.' },
+      ],
+      temperature: 0.9,
+    });
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'POST', headers, body });
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`HTTP ${resp.status}: ${errText.slice(0, 200)}`);
+    }
+    const data = await resp.json();
+
+    let content;
+    if (s.provider === 'anthropic') {
+      content = data.content?.[0]?.text || '';
+    } else {
+      content = data.choices?.[0]?.message?.content || '';
+    }
+
+    // Extract JSON from response (may be wrapped in markdown)
+    let jsonStr = content;
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    if (jsonMatch) jsonStr = jsonMatch[0];
+
+    const movies = JSON.parse(jsonStr);
+    if (!Array.isArray(movies)) throw new Error('Response is not an array');
+
+    let added = 0;
+    movies.forEach(m => {
+      if (!m.title) return;
+      // Skip duplicates
+      if (state.movies.some(existing => existing.title.toLowerCase() === m.title.toLowerCase())) return;
+      state.movies.push({
+        id: genId(),
+        watched: false,
+        title: m.title,
+        year: m.year || null,
+        director: m.director || '',
+        language: m.language || '',
+        rating: m.rating || null,
+        genre: m.genre || '',
+        movement: m.movement || '',
+        desc: m.desc || '',
+        tier: m.tier || 2,
+      });
+      added++;
+    });
+
+    saveState(state);
+    render();
+    closeModal('fetchModal');
+    status.className = 'status ok';
+    toast(`Added ${added} new movie${added !== 1 ? 's' : ''}`);
+  } catch (err) {
+    status.className = 'status error';
+    status.textContent = 'Error: ' + err.message;
+  }
+  btn.disabled = false;
+}
+
+// ── Modal helpers ──
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(el => el.classList.remove('open'));
+});
+
+// ── Toast ──
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Export/Import ──
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cinephile-backup.json';
+  a.click();
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const text = await file.text();
+    try {
+      const data = JSON.parse(text);
+      state = data;
+      saveState(state);
+      render();
+      toast('Data imported');
+    } catch { toast('Invalid JSON file'); }
+  };
+  input.click();
+}
+
+// ── Provider preset helper ──
+document.getElementById('cfgProvider').addEventListener('change', (e) => {
+  const presets = {
+    openai: { endpoint: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o' },
+    anthropic: { endpoint: 'https://api.anthropic.com/v1/messages', model: 'claude-sonnet-4-20250514' },
+    ollama: { endpoint: 'http://localhost:11434/api/chat', model: 'llama3' },
+    custom: { endpoint: '', model: '' },
+  };
+  const p = presets[e.target.value];
+  if (p) {
+    document.getElementById('cfgEndpoint').value = p.endpoint;
+    document.getElementById('cfgModel').value = p.model;
+  }
+});
+
+// Init
+render();
+</script>
+</body>
+</html>
