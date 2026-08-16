@@ -412,7 +412,7 @@
       <option value="custom">Custom OpenAI-compatible</option>
     </select>
     <label>API Endpoint</label>
-    <input id="cfgEndpoint" placeholder="https://api.deepseek.com/chat/completions">
+    <input id="cfgEndpoint" placeholder="https://api.deepseek.com">
     <label>API Key</label>
     <input id="cfgKey" type="password" placeholder="sk-...">
     <label>Model</label>
@@ -768,20 +768,22 @@ async function doFetch() {
   status.innerHTML = '<span class="spinner"></span> Asking the LLM…';
 
   const s = state.settings;
-  let url = s.endpoint;
-  if (!url) {
-    if (s.provider === 'deepseek') url = s.endpoint || 'https://api.deepseek.com/chat/completions';
-    else if (s.provider === 'openai') url = s.endpoint || 'https://api.openai.com/v1/chat/completions';
-    else if (s.provider === 'openrouter') url = s.endpoint || 'https://openrouter.ai/api/v1/chat/completions';
-    else if (s.provider === 'anthropic') url = s.endpoint || 'https://api.anthropic.com/v1/messages';
-    else if (s.provider === 'ollama') url = s.endpoint || 'http://localhost:11434/api/chat';
+  let baseUrl = (s.endpoint || '').replace(/\/+$/, '');
+  if (!baseUrl) {
+    if (s.provider === 'deepseek') baseUrl = 'https://api.deepseek.com';
+    else if (s.provider === 'openai') baseUrl = 'https://api.openai.com/v1';
+    else if (s.provider === 'openrouter') baseUrl = 'https://openrouter.ai/api/v1';
+    else if (s.provider === 'anthropic') baseUrl = 'https://api.anthropic.com/v1';
+    else if (s.provider === 'ollama') baseUrl = 'http://localhost:11434/api';
     else { status.className = 'status error'; status.textContent = 'No endpoint configured.'; btn.disabled = false; return; }
   }
+  const isAnthropic = s.provider === 'anthropic';
+  const url = isAnthropic ? `${baseUrl}/messages` : `${baseUrl}/chat/completions`;
 
   const systemPrompt = buildPrompt();
   let headers, body;
 
-  if (s.provider === 'anthropic') {
+  if (isAnthropic) {
     headers = {
       'Content-Type': 'application/json',
       'x-api-key': s.key,
@@ -817,7 +819,7 @@ async function doFetch() {
     const data = await resp.json();
 
     let content;
-    if (s.provider === 'anthropic') {
+    if (isAnthropic) {
       content = data.content?.[0]?.text || '';
     } else {
       content = data.choices?.[0]?.message?.content || '';
@@ -916,11 +918,11 @@ function importData() {
 // ── Provider preset helper ──
 document.getElementById('cfgProvider').addEventListener('change', (e) => {
   const presets = {
-    deepseek: { endpoint: 'https://api.deepseek.com/chat/completions', model: 'deepseek-v4-flash' },
-    openai: { endpoint: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o' },
-    openrouter: { endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'google/gemini-2.0-flash-001' },
-    anthropic: { endpoint: 'https://api.anthropic.com/v1/messages', model: 'claude-sonnet-4-20250514' },
-    ollama: { endpoint: 'http://localhost:11434/api/chat', model: 'llama3' },
+    deepseek: { endpoint: 'https://api.deepseek.com', model: 'deepseek-v4-flash' },
+    openai: { endpoint: 'https://api.openai.com/v1', model: 'gpt-4o' },
+    openrouter: { endpoint: 'https://openrouter.ai/api/v1', model: 'google/gemini-2.0-flash-001' },
+    anthropic: { endpoint: 'https://api.anthropic.com/v1', model: 'claude-sonnet-4-20250514' },
+    ollama: { endpoint: 'http://localhost:11434/api', model: 'llama3' },
     custom: { endpoint: '', model: '' },
   };
   const p = presets[e.target.value];
